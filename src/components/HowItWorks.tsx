@@ -1,5 +1,4 @@
-
-import { Plug, MagicWand, Dashboard } from "lucide-react";
+import { Plug, Wand, LayoutDashboard } from "lucide-react";
 
 const HowItWorks = () => {
   const steps = [
@@ -9,12 +8,12 @@ const HowItWorks = () => {
       description: "Sign in with your Google or Microsoft account. We use read-only access to find subscription emails. Your data is encrypted and private."
     },
     {
-      icon: MagicWand,
+      icon: Wand,
       title: "We Find Everything",
       description: "Our AI scans for receipts and invoices from services like Netflix, Spotify, gym memberships, and more."
     },
     {
-      icon: Dashboard,
+      icon: LayoutDashboard,
       title: "Take Back Control",
       description: "See all your subscriptions in one simple dashboard. Track spending, get renewal alerts, and never overpay again."
     }
