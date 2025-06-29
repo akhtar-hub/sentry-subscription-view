@@ -8,7 +8,7 @@ const FinalCTA = () => {
         <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6">
           Ready to Plug the Leaks in Your <span className="text-primary">Budget?</span>
         </h2>
-        <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
+        <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto font-normal">
           It takes less than a minute to start finding savings.
         </p>
         <Button 
@@ -18,7 +18,7 @@ const FinalCTA = () => {
           Sign Up for Free
         </Button>
         
-        <div className="mt-8 text-sm text-muted-foreground">
+        <div className="mt-8 text-sm text-muted-foreground font-normal">
           No credit card required • Free forever plan available
         </div>
       </div>

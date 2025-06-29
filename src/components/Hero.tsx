@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 
 const Hero = () => {
   return (
-    <section className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-50 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <section className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-50 px-4 sm:px-6 lg:px-8 pt-16">
+      <div className="max-w-7xl mx-auto w-full">
         <div className="text-center">
           {/* Hero Headlines */}
           <div className="animate-fade-in">
@@ -12,7 +12,7 @@ const Hero = () => {
               Stop Wasting Money on{" "}
               <span className="text-primary">Forgotten Subscriptions</span>
             </h1>
-            <p className="text-lg sm:text-xl lg:text-2xl text-muted-foreground mb-10 max-w-4xl mx-auto leading-relaxed">
+            <p className="text-lg sm:text-xl lg:text-2xl text-muted-foreground mb-10 max-w-4xl mx-auto leading-relaxed font-normal">
               SubSentry automatically finds all your recurring payments, puts you in control, 
               and saves you money. <span className="font-medium text-foreground">Effortlessly.</span>
             </p>
@@ -29,42 +29,44 @@ const Hero = () => {
           </div>
 
           {/* Visual Representation */}
-          <div className="relative max-w-4xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
+          <div className="relative max-w-5xl mx-auto">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 border border-gray-100 overflow-hidden">
               <div className="flex items-center justify-center mb-6">
-                <div className="w-full max-w-2xl bg-gray-100 rounded-lg p-6">
+                <div className="w-full max-w-3xl bg-gray-100 rounded-lg p-4 sm:p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2">
                       <div className="w-3 h-3 bg-red-400 rounded-full"></div>
                       <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
                       <div className="w-3 h-3 bg-green-400 rounded-full"></div>
                     </div>
-                    <div className="text-sm text-gray-400">SubSentry Dashboard</div>
+                    <div className="text-sm text-gray-400 font-normal">SubSentry Dashboard</div>
                   </div>
                   
-                  {/* Subscription Cards Animation */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {/* Subscription Cards with Logos */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                     {[
-                      { name: "Netflix", color: "bg-red-500", delay: "0s" },
-                      { name: "Spotify", color: "bg-green-500", delay: "0.2s" },
-                      { name: "Adobe", color: "bg-red-600", delay: "0.4s" },
-                      { name: "Gym", color: "bg-blue-500", delay: "0.6s" }
+                      { name: "Netflix", color: "bg-red-600", logo: "N", delay: "0s" },
+                      { name: "Spotify", color: "bg-green-500", logo: "♪", delay: "0.2s" },
+                      { name: "Adobe", color: "bg-red-500", logo: "A", delay: "0.4s" },
+                      { name: "Gym", color: "bg-blue-500", logo: "💪", delay: "0.6s" }
                     ].map((subscription, index) => (
                       <div 
                         key={subscription.name}
-                        className="bg-white rounded-lg p-4 shadow-md animate-float"
+                        className="bg-white rounded-lg p-3 sm:p-4 shadow-md animate-float min-w-0"
                         style={{ animationDelay: subscription.delay }}
                       >
-                        <div className={`w-8 h-8 ${subscription.color} rounded-lg mb-2 mx-auto`}></div>
-                        <div className="text-xs font-medium text-center">{subscription.name}</div>
-                        <div className="text-xs text-gray-500 text-center">$12.99/mo</div>
+                        <div className={`w-8 h-8 sm:w-10 sm:h-10 ${subscription.color} rounded-lg mb-2 mx-auto flex items-center justify-center text-white font-bold text-sm sm:text-base`}>
+                          {subscription.logo}
+                        </div>
+                        <div className="text-xs sm:text-sm font-medium text-center truncate">{subscription.name}</div>
+                        <div className="text-xs text-gray-500 text-center font-normal">$12.99/mo</div>
                       </div>
                     ))}
                   </div>
                   
-                  <div className="mt-6 p-4 bg-secondary/10 rounded-lg border border-secondary/20">
-                    <div className="text-sm font-medium text-center text-secondary">
-                      Total Monthly: $51.96 • Next Renewal: Tomorrow
+                  <div className="mt-6 p-4 bg-gray-800 rounded-lg border border-gray-700">
+                    <div className="text-sm font-semibold text-center text-white">
+                      💰 Total Monthly: $51.96 • ⚠️ Next Renewal: Tomorrow
                     </div>
                   </div>
                 </div>
