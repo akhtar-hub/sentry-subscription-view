@@ -9,6 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import type { Database } from '@/integrations/supabase/types';
+
+type BillingFrequency = Database['public']['Enums']['billing_frequency'];
+type SubscriptionCategory = Database['public']['Enums']['subscription_category'];
 
 interface AddSubscriptionDialogProps {
   open: boolean;
@@ -20,8 +24,8 @@ export function AddSubscriptionDialog({ open, onOpenChange }: AddSubscriptionDia
   const [formData, setFormData] = useState({
     name: '',
     cost: '',
-    billing_frequency: 'monthly',
-    category: 'other',
+    billing_frequency: 'monthly' as BillingFrequency,
+    category: 'other' as SubscriptionCategory,
     next_billing_date: '',
   });
 
@@ -34,8 +38,11 @@ export function AddSubscriptionDialog({ open, onOpenChange }: AddSubscriptionDia
       const { data, error } = await supabase
         .from('user_subscriptions')
         .insert({
-          ...formData,
+          name: formData.name,
           cost: parseFloat(formData.cost) || null,
+          billing_frequency: formData.billing_frequency,
+          category: formData.category,
+          next_billing_date: formData.next_billing_date || null,
           is_manual: true,
           user_id: user.id,
         })
@@ -106,7 +113,7 @@ export function AddSubscriptionDialog({ open, onOpenChange }: AddSubscriptionDia
             <Label htmlFor="billing_frequency">Billing Frequency</Label>
             <Select
               value={formData.billing_frequency}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, billing_frequency: value }))}
+              onValueChange={(value: BillingFrequency) => setFormData(prev => ({ ...prev, billing_frequency: value }))}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -124,7 +131,7 @@ export function AddSubscriptionDialog({ open, onOpenChange }: AddSubscriptionDia
             <Label htmlFor="category">Category</Label>
             <Select
               value={formData.category}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+              onValueChange={(value: SubscriptionCategory) => setFormData(prev => ({ ...prev, category: value }))}
             >
               <SelectTrigger>
                 <SelectValue />
