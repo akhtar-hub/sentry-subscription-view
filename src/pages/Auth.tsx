@@ -3,27 +3,43 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 export default function Auth() {
-  const { user, signInWithGoogle } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      navigate('/dashboard');
+    if (user && !isRedirecting) {
+      console.log('Auth: User detected, redirecting to dashboard');
+      setIsRedirecting(true);
+      // Small delay to ensure smooth transition
+      setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+      }, 100);
     }
-  }, [user, navigate]);
+  }, [user, navigate, isRedirecting]);
 
   const handleGoogleSignIn = async () => {
     try {
+      console.log('Auth: Starting Google sign in');
       await signInWithGoogle();
     } catch (error) {
+      console.error('Auth: Google sign in error:', error);
       toast.error('Failed to sign in with Google');
-      console.error('Auth error:', error);
     }
   };
+
+  // Show loading while checking auth state or redirecting
+  if (loading || isRedirecting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">

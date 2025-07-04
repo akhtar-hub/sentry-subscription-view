@@ -1,14 +1,20 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AuthGuard } from '@/components/AuthGuard';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { DashboardStats } from '@/components/dashboard/DashboardStats';
 import { SubscriptionsList } from '@/components/dashboard/SubscriptionsList';
 import { EmailScanSection } from '@/components/dashboard/EmailScanSection';
 import { AddSubscriptionDialog } from '@/components/dashboard/AddSubscriptionDialog';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Dashboard() {
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    console.log('Dashboard: Component mounted', { user: !!user });
+  }, [user]);
 
   return (
     <AuthGuard>

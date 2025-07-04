@@ -19,9 +19,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('AuthProvider: Setting up auth state listener');
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('AuthProvider: Auth state changed', { event, session: !!session });
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -30,15 +33,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('AuthProvider: Initial session check', { session: !!session });
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('AuthProvider: Cleaning up auth listener');
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signInWithGoogle = async () => {
+    console.log('AuthProvider: Starting Google OAuth');
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -46,12 +54,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         redirectTo: `${window.location.origin}/dashboard`,
       },
     });
-    if (error) throw error;
+    if (error) {
+      console.error('AuthProvider: Google OAuth error:', error);
+      throw error;
+    }
   };
 
   const signOut = async () => {
+    console.log('AuthProvider: Signing out');
     const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    if (error) {
+      console.error('AuthProvider: Sign out error:', error);
+      throw error;
+    }
   };
 
   return (
