@@ -43,7 +43,7 @@ const Terms = () => {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibent text-gray-900 mb-4">Limitation of Liability</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Limitation of Liability</h2>
               <p className="text-gray-700 mb-4">
                 SubSentry is provided "as is" without any guarantees. We are not liable for any damages resulting from the use of our service, including but not limited to missed payments or inaccurate subscription information.
               </p>
