@@ -1,0 +1,137 @@
+
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Mail, Search, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { toast } from 'sonner';
+
+export function EmailScanSection() {
+  const [isScanning, setIsScanning] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: lastScan } = useQuery({
+    queryKey: ['last-email-scan'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('email_scan_logs')
+        .select('*')
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+  });
+
+  const scanEmailsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/scan-emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to start email scan');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast.success('Email scan started successfully!');
+      queryClient.invalidateQueries({ queryKey: ['last-email-scan'] });
+      queryClient.invalidateQueries({ queryKey: ['user-subscriptions'] });
+    },
+    onError: (error) => {
+      toast.error('Failed to start email scan');
+      console.error('Scan error:', error);
+    },
+    onSettled: () => {
+      setIsScanning(false);
+    },
+  });
+
+  const handleScanEmails = () => {
+    setIsScanning(true);
+    scanEmailsMutation.mutate();
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'running':
+        return <Clock className="h-5 w-5 text-blue-500 animate-spin" />;
+      case 'failed':
+        return <AlertCircle className="h-5 w-5 text-red-500" />;
+      default:
+        return <Mail className="h-5 w-5 text-gray-500" />;
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Mail className="h-5 w-5" />
+          Email Scanning
+        </CardTitle>
+        <CardDescription>
+          Automatically scan your Gmail inbox for subscription-related emails
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {lastScan && (
+          <div className="bg-muted/50 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">Last Scan</span>
+              {getStatusIcon(lastScan.status)}
+            </div>
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground">Emails Processed</p>
+                <p className="font-medium">{lastScan.emails_processed || 0}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Subscriptions Found</p>
+                <p className="font-medium">{lastScan.subscriptions_found || 0}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Started</p>
+                <p className="font-medium">
+                  {new Date(lastScan.started_at).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+            {lastScan.status === 'running' && (
+              <Progress value={65} className="mt-3" />
+            )}
+          </div>
+        )}
+
+        <Button 
+          onClick={handleScanEmails}
+          disabled={isScanning || lastScan?.status === 'running'}
+          className="w-full"
+        >
+          <Search className="h-4 w-4 mr-2" />
+          {isScanning || lastScan?.status === 'running' 
+            ? 'Scanning Emails...' 
+            : 'Scan Email Inbox'
+          }
+        </Button>
+
+        <p className="text-xs text-muted-foreground">
+          We'll scan your Gmail inbox for subscription confirmations, billing notifications, 
+          and renewal reminders to automatically detect your subscriptions.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}

@@ -9,7 +9,176 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      email_scan_logs: {
+        Row: {
+          completed_at: string | null
+          emails_processed: number | null
+          error_message: string | null
+          id: string
+          scan_type: string | null
+          started_at: string | null
+          status: string | null
+          subscriptions_found: number | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          emails_processed?: number | null
+          error_message?: string | null
+          id?: string
+          scan_type?: string | null
+          started_at?: string | null
+          status?: string | null
+          subscriptions_found?: number | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          emails_processed?: number | null
+          error_message?: string | null
+          id?: string
+          scan_type?: string | null
+          started_at?: string | null
+          status?: string | null
+          subscriptions_found?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          gmail_access_token: string | null
+          gmail_refresh_token: string | null
+          id: string
+          last_scan_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          gmail_access_token?: string | null
+          gmail_refresh_token?: string | null
+          id: string
+          last_scan_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          gmail_access_token?: string | null
+          gmail_refresh_token?: string | null
+          id?: string
+          last_scan_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      subscription_organizations: {
+        Row: {
+          category: Database["public"]["Enums"]["subscription_category"] | null
+          created_at: string | null
+          id: string
+          is_verified: boolean | null
+          logo_url: string | null
+          name: string
+          pricing_plans: Json | null
+          updated_at: string | null
+          website_url: string | null
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["subscription_category"] | null
+          created_at?: string | null
+          id?: string
+          is_verified?: boolean | null
+          logo_url?: string | null
+          name: string
+          pricing_plans?: Json | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["subscription_category"] | null
+          created_at?: string | null
+          id?: string
+          is_verified?: boolean | null
+          logo_url?: string | null
+          name?: string
+          pricing_plans?: Json | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          billing_frequency:
+            | Database["public"]["Enums"]["billing_frequency"]
+            | null
+          category: Database["public"]["Enums"]["subscription_category"] | null
+          cost: number | null
+          created_at: string | null
+          email_source: string | null
+          id: string
+          is_manual: boolean | null
+          name: string
+          next_billing_date: string | null
+          organization_id: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          billing_frequency?:
+            | Database["public"]["Enums"]["billing_frequency"]
+            | null
+          category?: Database["public"]["Enums"]["subscription_category"] | null
+          cost?: number | null
+          created_at?: string | null
+          email_source?: string | null
+          id?: string
+          is_manual?: boolean | null
+          name: string
+          next_billing_date?: string | null
+          organization_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          billing_frequency?:
+            | Database["public"]["Enums"]["billing_frequency"]
+            | null
+          category?: Database["public"]["Enums"]["subscription_category"] | null
+          cost?: number | null
+          created_at?: string | null
+          email_source?: string | null
+          id?: string
+          is_manual?: boolean | null
+          name?: string
+          next_billing_date?: string | null
+          organization_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +187,17 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      billing_frequency: "monthly" | "yearly" | "quarterly" | "weekly" | "daily"
+      subscription_category:
+        | "entertainment"
+        | "productivity"
+        | "news"
+        | "utility"
+        | "health"
+        | "finance"
+        | "education"
+        | "shopping"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +312,19 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      billing_frequency: ["monthly", "yearly", "quarterly", "weekly", "daily"],
+      subscription_category: [
+        "entertainment",
+        "productivity",
+        "news",
+        "utility",
+        "health",
+        "finance",
+        "education",
+        "shopping",
+        "other",
+      ],
+    },
   },
 } as const

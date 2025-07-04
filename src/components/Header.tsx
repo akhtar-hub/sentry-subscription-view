@@ -1,5 +1,6 @@
 
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const Header = () => {
   return (
@@ -28,9 +29,11 @@ const Header = () => {
             </a>
           </nav>
           
-          <Button className="bg-primary hover:bg-primary/90 text-white">
-            Get Started
-          </Button>
+          <Link to="/auth">
+            <Button className="bg-primary hover:bg-primary/90 text-white">
+              Get Started
+            </Button>
+          </Link>
         </div>
       </div>
     </header>
