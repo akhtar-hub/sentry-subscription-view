@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AddSubscriptionDialogProps {
   open: boolean;
@@ -15,6 +16,7 @@ interface AddSubscriptionDialogProps {
 }
 
 export function AddSubscriptionDialog({ open, onOpenChange }: AddSubscriptionDialogProps) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     cost: '',
@@ -27,13 +29,16 @@ export function AddSubscriptionDialog({ open, onOpenChange }: AddSubscriptionDia
 
   const addSubscriptionMutation = useMutation({
     mutationFn: async () => {
+      if (!user) throw new Error('User not authenticated');
+      
       const { data, error } = await supabase
         .from('user_subscriptions')
-        .insert([{
+        .insert({
           ...formData,
           cost: parseFloat(formData.cost) || null,
           is_manual: true,
-        }])
+          user_id: user.id,
+        })
         .select()
         .single();
 

@@ -19,7 +19,7 @@ export function DashboardStats() {
   });
 
   const totalMonthly = subscriptions?.reduce((sum, sub) => {
-    const cost = parseFloat(sub.cost || '0');
+    const cost = parseFloat(sub.cost?.toString() || '0');
     if (sub.billing_frequency === 'yearly') return sum + (cost / 12);
     if (sub.billing_frequency === 'quarterly') return sum + (cost / 3);
     return sum + cost;
