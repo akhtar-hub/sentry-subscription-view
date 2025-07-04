@@ -23,7 +23,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('AuthProvider: Auth state changed', { event, session: !!session });
         setSession(session);
         setUser(session?.user ?? null);
@@ -32,12 +32,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('AuthProvider: Initial session check', { session: !!session });
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('AuthProvider: Error getting session:', error);
+        } else {
+          console.log('AuthProvider: Initial session check', { session: !!session });
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
+      } catch (error) {
+        console.error('AuthProvider: Exception getting session:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getInitialSession();
 
     return () => {
       console.log('AuthProvider: Cleaning up auth listener');
@@ -46,25 +58,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signInWithGoogle = async () => {
-    console.log('AuthProvider: Starting Google OAuth');
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        scopes: 'https://www.googleapis.com/auth/gmail.readonly',
-        redirectTo: `${window.location.origin}/dashboard`,
-      },
-    });
-    if (error) {
-      console.error('AuthProvider: Google OAuth error:', error);
+    try {
+      console.log('AuthProvider: Starting Google OAuth');
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          scopes: 'https://www.googleapis.com/auth/gmail.readonly',
+          redirectTo: `${window.location.origin}/dashboard`,
+        },
+      });
+      if (error) {
+        console.error('AuthProvider: Google OAuth error:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('AuthProvider: Sign in error:', error);
       throw error;
     }
   };
 
   const signOut = async () => {
-    console.log('AuthProvider: Signing out');
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('AuthProvider: Sign out error:', error);
+    try {
+      console.log('AuthProvider: Signing out');
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('AuthProvider: Sign out error:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('AuthProvider: Sign out exception:', error);
       throw error;
     }
   };

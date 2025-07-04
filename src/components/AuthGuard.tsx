@@ -14,34 +14,31 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // Add a small delay to ensure auth state is properly initialized
-    const timer = setTimeout(() => {
+    console.log('AuthGuard: Auth state', { user: !!user, loading, pathname: location.pathname });
+    
+    if (!loading) {
       setIsInitialized(true);
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (!loading && isInitialized && !user) {
-      // Only redirect if we're not already on the auth page to prevent loops
-      if (location.pathname !== '/auth') {
-        console.log('AuthGuard: Redirecting to /auth - no user found');
-        navigate('/auth');
+      
+      if (!user && location.pathname !== '/auth') {
+        console.log('AuthGuard: No user, redirecting to auth');
+        navigate('/auth', { replace: true });
       }
     }
-  }, [user, loading, navigate, location.pathname, isInitialized]);
+  }, [user, loading, navigate, location.pathname]);
 
   // Show loading while auth is being determined
   if (loading || !isInitialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
       </div>
     );
   }
 
-  // If no user and we're on a protected route, show nothing (redirect will happen)
+  // If no user, show nothing (redirect will happen)
   if (!user) {
     return null;
   }
