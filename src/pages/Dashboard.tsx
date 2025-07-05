@@ -26,6 +26,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (session && user) {
       console.log('Session after OAuth:', session);
+      console.log('Current user ID:', user.id);
       const providerToken = session.provider_token;
       const providerRefreshToken = session.provider_refresh_token;
       if (providerToken) {
@@ -35,7 +36,14 @@ export default function Dashboard() {
             gmail_access_token: providerToken,
             gmail_refresh_token: providerRefreshToken,
           })
-          .eq('id', user.id);
+          .eq('id', user.id)
+          .then(({ error, data }) => {
+            if (error) {
+              console.error('Failed to update profile with Gmail tokens:', error);
+            } else {
+              console.log('Successfully updated profile with Gmail tokens!', data);
+            }
+          });
       }
     }
   }, [session, user]);
