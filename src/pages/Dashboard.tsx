@@ -14,7 +14,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('Dashboard: Auth state', { user: !!user, loading });
+    console.log('Dashboard: Auth state', { user: !!user, loading, pathname: window.location.pathname });
     
     if (!loading && !user) {
       console.log('Dashboard: No user, redirecting to auth');
@@ -24,11 +24,12 @@ export default function Dashboard() {
 
   // Show loading while auth is being determined
   if (loading) {
+    console.log('Dashboard: Showing loading state');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -36,8 +37,11 @@ export default function Dashboard() {
 
   // If no user, show nothing (redirect will happen)
   if (!user) {
+    console.log('Dashboard: No user, rendering null');
     return null;
   }
+
+  console.log('Dashboard: Rendering dashboard for user', user.email);
 
   return (
     <div className="min-h-screen bg-gray-50">

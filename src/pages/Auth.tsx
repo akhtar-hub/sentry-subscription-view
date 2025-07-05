@@ -12,7 +12,7 @@ export default function Auth() {
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   useEffect(() => {
-    console.log('Auth page: Auth state', { user: !!user, loading });
+    console.log('Auth page: Auth state', { user: !!user, loading, pathname: window.location.pathname });
     
     if (user && !loading) {
       console.log('Auth page: User detected, redirecting to dashboard');
@@ -25,7 +25,7 @@ export default function Auth() {
       console.log('Auth: Starting Google sign in');
       setIsSigningIn(true);
       await signInWithGoogle();
-      // Don't need to handle redirect here - it's handled by OAuth flow
+      // OAuth redirect will handle the rest
     } catch (error) {
       console.error('Auth: Google sign in error:', error);
       toast.error('Failed to sign in with Google. Please try again.');
@@ -35,11 +35,12 @@ export default function Auth() {
 
   // Show loading while checking auth state
   if (loading) {
+    console.log('Auth: Showing loading state');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-gray-600">Checking authentication...</p>
         </div>
       </div>
     );
@@ -47,6 +48,7 @@ export default function Auth() {
 
   // If user is already logged in, show loading while redirecting
   if (user) {
+    console.log('Auth: User logged in, showing redirect message');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
@@ -56,6 +58,8 @@ export default function Auth() {
       </div>
     );
   }
+
+  console.log('Auth: Rendering sign in form');
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
