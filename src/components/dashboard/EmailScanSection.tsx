@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,8 +30,18 @@ export function EmailScanSection() {
     mutationFn: async () => {
       console.log('Starting email scan via Supabase Edge Function');
       
+      // Get the current session to ensure we're authenticated
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        throw new Error('Authentication required');
+      }
+      
       const { data, error } = await supabase.functions.invoke('scan-emails', {
-        body: {}
+        body: {},
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
       
       if (error) {
@@ -50,7 +59,7 @@ export function EmailScanSection() {
     },
     onError: (error) => {
       console.error('Scan error:', error);
-      toast.error('Failed to start email scan');
+      toast.error(`Failed to start email scan: ${error.message}`);
     },
     onSettled: () => {
       setIsScanning(false);
