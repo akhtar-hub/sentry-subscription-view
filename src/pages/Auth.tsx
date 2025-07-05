@@ -2,30 +2,47 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 export default function Auth() {
   const { user, loading, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   useEffect(() => {
-    console.log('Auth page: Auth state', { user: !!user, loading, pathname: window.location.pathname });
+    console.log('Auth page: Auth state', { 
+      user: !!user, 
+      loading, 
+      pathname: location.pathname,
+      hash: location.hash,
+      search: location.search 
+    });
     
-    if (user && !loading) {
-      console.log('Auth page: User detected, redirecting to dashboard');
-      navigate('/dashboard', { replace: true });
+    // If we're still loading, wait
+    if (loading) {
+      console.log('Auth page: Still loading auth state');
+      return;
     }
-  }, [user, loading, navigate]);
+    
+    // If user is authenticated, redirect to dashboard
+    if (user) {
+      console.log('Auth page: User authenticated, redirecting to dashboard');
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+    
+    console.log('Auth page: No user, showing auth form');
+  }, [user, loading, navigate, location]);
 
   const handleGoogleSignIn = async () => {
     try {
       console.log('Auth: Starting Google sign in');
       setIsSigningIn(true);
       await signInWithGoogle();
-      // OAuth redirect will handle the rest
+      // OAuth will handle the redirect
     } catch (error) {
       console.error('Auth: Google sign in error:', error);
       toast.error('Failed to sign in with Google. Please try again.');

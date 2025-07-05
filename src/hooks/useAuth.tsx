@@ -20,14 +20,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     console.log('AuthProvider: Setting up auth state listener');
+    let mounted = true;
     
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('AuthProvider: Auth state changed', { event, session: !!session, user: !!session?.user });
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
       }
     );
 
@@ -39,19 +42,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.error('AuthProvider: Error getting session:', error);
         } else {
           console.log('AuthProvider: Initial session check', { session: !!session });
-          setSession(session);
-          setUser(session?.user ?? null);
+          if (mounted) {
+            setSession(session);
+            setUser(session?.user ?? null);
+          }
         }
       } catch (error) {
         console.error('AuthProvider: Exception getting session:', error);
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     getInitialSession();
 
     return () => {
+      mounted = false;
       console.log('AuthProvider: Cleaning up auth listener');
       subscription.unsubscribe();
     };
