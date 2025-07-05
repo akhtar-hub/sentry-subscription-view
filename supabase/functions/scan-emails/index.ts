@@ -234,7 +234,7 @@ Respond in JSON with keys: provider, billing_amount, next_billing_date, status.`
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'llama-3-sonar-large-32k-online',
+      model: 'sonar-pro',
       messages: [
         { role: 'system', content: 'You are a helpful assistant for extracting subscription details from emails.' },
         { role: 'user', content: prompt }
