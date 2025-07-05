@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,6 +40,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (session && user) {
+      // Extract Google tokens from session
+      const providerToken = session.provider_token; // Google access token
+      const refreshToken = session.refresh_token;   // Google refresh token (may be null)
+      if (providerToken) {
+        supabase
+          .from('profiles')
+          .update({
+            gmail_access_token: providerToken,
+            gmail_refresh_token: refreshToken,
+          })
+          .eq('id', user.id);
+      }
+    }
+  }, [session, user]);
 
   const signInWithGoogle = async () => {
     console.log('AuthProvider: Starting Google sign in');
