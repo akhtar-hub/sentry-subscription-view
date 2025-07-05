@@ -274,9 +274,13 @@ async function scanUserEmails(user, supabaseAdmin, scanLogId) {
     let subscriptionsFound = 0;
     let emailsProcessed = 0;
     const foundProviders = new Set();
+    const MAX_EMAILS_PER_PROVIDER = 10; // Limit per provider
+    const MAX_TOTAL_EMAILS = 50; // Global limit
+    let totalProcessed = 0;
     for (const provider of PROVIDERS) {
+      if (totalProcessed >= MAX_TOTAL_EMAILS) break;
       let gmailRes = await fetch(
-        `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(provider.query)}`,
+        `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(provider.query)}&maxResults=${MAX_EMAILS_PER_PROVIDER}`,
         {
           headers: {
             'Authorization': `Bearer ${gmailAccessToken}`,
@@ -288,7 +292,7 @@ async function scanUserEmails(user, supabaseAdmin, scanLogId) {
         gmailAccessToken = tokenData.access_token;
         await supabaseAdmin.from('profiles').update({ gmail_access_token: gmailAccessToken }).eq('id', user.id);
         gmailRes = await fetch(
-          `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(provider.query)}`,
+          `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(provider.query)}&maxResults=${MAX_EMAILS_PER_PROVIDER}`,
           {
             headers: {
               'Authorization': `Bearer ${gmailAccessToken}`,
@@ -300,6 +304,7 @@ async function scanUserEmails(user, supabaseAdmin, scanLogId) {
       const { messages } = await gmailRes.json();
       if (messages && messages.length > 0) {
         for (const msg of messages) {
+          if (totalProcessed >= MAX_TOTAL_EMAILS) break;
           const msgRes = await fetch(
             `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=full`,
             {
@@ -311,6 +316,10 @@ async function scanUserEmails(user, supabaseAdmin, scanLogId) {
           if (!msgRes.ok) continue;
           const msgData = await msgRes.json();
           emailsProcessed++;
+          totalProcessed++;
+          if (emailsProcessed % 10 === 0) {
+            console.log(`Processed ${emailsProcessed} emails so far...`);
+          }
           const emailBody = extractBodyFromPayload(msgData.payload);
           if (!emailBody) continue;
           // Use Perplexity AI to extract subscription details
