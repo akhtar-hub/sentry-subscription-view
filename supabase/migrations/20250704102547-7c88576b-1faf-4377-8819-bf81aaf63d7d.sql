@@ -1,4 +1,3 @@
-
 -- Enable necessary extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -63,6 +62,7 @@ CREATE TABLE public.user_subscriptions (
   status TEXT DEFAULT 'active',
   email_source TEXT,
   is_manual BOOLEAN DEFAULT FALSE,
+  is_pending_review BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

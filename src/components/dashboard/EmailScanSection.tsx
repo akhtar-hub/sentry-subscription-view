@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,11 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Mail, Search, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import { PendingSubscriptionsReviewDialog } from './PendingSubscriptionsReviewDialog';
 
 export function EmailScanSection() {
   const [isScanning, setIsScanning] = useState(false);
   const [currentScanId, setCurrentScanId] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
+  const [pendingSubscriptions, setPendingSubscriptions] = useState([]);
 
   const { data: lastScan, refetch: refetchLastScan } = useQuery({
     queryKey: ['last-email-scan'],
@@ -70,6 +72,24 @@ export function EmailScanSection() {
           toast.error('Email scan failed. Please try again.');
         }
       }
+    }
+  }, [lastScan?.status]);
+
+  // Fetch pending subscriptions for review
+  const fetchPendingSubscriptions = async () => {
+    const { data, error } = await supabase
+      .from('user_subscriptions')
+      .select('*')
+      .eq('is_pending_review', true);
+    if (!error) setPendingSubscriptions(data || []);
+  };
+
+  // Show review dialog after scan completes and there are pending subscriptions
+  useEffect(() => {
+    if (lastScan && lastScan.status === 'completed') {
+      fetchPendingSubscriptions().then(() => {
+        setShowReviewDialog(true);
+      });
     }
   }, [lastScan?.status]);
 
@@ -138,72 +158,80 @@ export function EmailScanSection() {
   const isCurrentlyScanning = isScanning || lastScan?.status === 'running';
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Mail className="h-5 w-5" />
-          Email Scanning
-        </CardTitle>
-        <CardDescription>
-          Automatically scan your Gmail inbox for subscription-related emails
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {lastScan && (
-          <div className="bg-muted/50 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Last Scan</span>
-              {getStatusIcon(lastScan.status)}
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            Email Scanning
+          </CardTitle>
+          <CardDescription>
+            Automatically scan your Gmail inbox for subscription-related emails
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {lastScan && (
+            <div className="bg-muted/50 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">Last Scan</span>
+                {getStatusIcon(lastScan.status)}
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Emails Processed</p>
+                  <p className="font-medium">{lastScan.emails_processed || 0}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Subscriptions Found</p>
+                  <p className="font-medium">{lastScan.subscriptions_found || 0}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Started</p>
+                  <p className="font-medium">
+                    {new Date(lastScan.started_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+              {lastScan.status === 'running' && (
+                <div className="mt-3">
+                  <Progress value={65} className="mb-2" />
+                  <p className="text-xs text-muted-foreground text-center">
+                    Scanning in progress...
+                  </p>
+                </div>
+              )}
+              {lastScan.status === 'failed' && lastScan.error_message && (
+                <div className="mt-3 p-2 bg-red-50 rounded text-sm text-red-600">
+                  Error: {lastScan.error_message}
+                </div>
+              )}
             </div>
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              <div>
-                <p className="text-muted-foreground">Emails Processed</p>
-                <p className="font-medium">{lastScan.emails_processed || 0}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Subscriptions Found</p>
-                <p className="font-medium">{lastScan.subscriptions_found || 0}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Started</p>
-                <p className="font-medium">
-                  {new Date(lastScan.started_at).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-            {lastScan.status === 'running' && (
-              <div className="mt-3">
-                <Progress value={65} className="mb-2" />
-                <p className="text-xs text-muted-foreground text-center">
-                  Scanning in progress...
-                </p>
-              </div>
-            )}
-            {lastScan.status === 'failed' && lastScan.error_message && (
-              <div className="mt-3 p-2 bg-red-50 rounded text-sm text-red-600">
-                Error: {lastScan.error_message}
-              </div>
-            )}
-          </div>
-        )}
+          )}
 
-        <Button 
-          onClick={handleScanEmails}
-          disabled={isCurrentlyScanning || scanEmailsMutation.isPending}
-          className="w-full"
-        >
-          <Search className="h-4 w-4 mr-2" />
-          {isCurrentlyScanning
-            ? 'Scanning Emails...' 
-            : 'Scan Email Inbox'
-          }
-        </Button>
+          <Button 
+            onClick={handleScanEmails}
+            disabled={isCurrentlyScanning || scanEmailsMutation.isPending}
+            className="w-full"
+          >
+            <Search className="h-4 w-4 mr-2" />
+            {isCurrentlyScanning
+              ? 'Scanning Emails...' 
+              : 'Scan Email Inbox'
+            }
+          </Button>
 
-        <p className="text-xs text-muted-foreground">
-          We'll scan your Gmail inbox for subscription confirmations, billing notifications, 
-          and renewal reminders to automatically detect your subscriptions.
-        </p>
-      </CardContent>
-    </Card>
+          <p className="text-xs text-muted-foreground">
+            We'll scan your Gmail inbox for subscription confirmations, billing notifications, 
+            and renewal reminders to automatically detect your subscriptions.
+          </p>
+        </CardContent>
+      </Card>
+      <PendingSubscriptionsReviewDialog
+        open={showReviewDialog}
+        onOpenChange={setShowReviewDialog}
+        pendingSubscriptions={pendingSubscriptions}
+        refetch={fetchPendingSubscriptions}
+      />
+    </>
   );
 }
