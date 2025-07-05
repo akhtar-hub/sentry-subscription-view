@@ -15,6 +15,31 @@ serve(async (req) => {
   try {
     console.log('Scan emails function started')
     
+    // Get auth header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      console.error('No Authorization header found')
+      return new Response(
+        JSON.stringify({ error: 'Missing Authorization header' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401,
+        }
+      )
+    }
+
+    // Create supabase client with service role for admin operations
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          persistSession: false,
+        },
+      }
+    )
+
+    // Create regular client for user authentication
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -25,25 +50,25 @@ serve(async (req) => {
       }
     )
 
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      console.error('No Authorization header found')
-      throw new Error('Missing Authorization header')
-    }
-
     const token = authHeader.replace('Bearer ', '')
     console.log('Token extracted, getting user...')
     
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
     if (authError || !user) {
       console.error('Auth error:', authError)
-      throw new Error('Unauthorized')
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401,
+        }
+      )
     }
 
     console.log('User authenticated:', user.id)
 
-    // Create a scan log entry with proper user context
-    const { data: scanLog, error: logError } = await supabaseClient
+    // Use admin client to insert scan log (bypassing RLS)
+    const { data: scanLog, error: logError } = await supabaseAdmin
       .from('email_scan_logs')
       .insert({
         user_id: user.id,
@@ -58,13 +83,19 @@ serve(async (req) => {
 
     if (logError) {
       console.error('Error creating scan log:', logError)
-      throw new Error(`Failed to create scan log: ${logError.message}`)
+      return new Response(
+        JSON.stringify({ error: `Failed to create scan log: ${logError.message}` }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        }
+      )
     }
 
     console.log('Scan log created:', scanLog.id)
 
     // Start background email scanning
-    const backgroundScan = scanUserEmails(user, supabaseClient, scanLog.id)
+    const backgroundScan = scanUserEmails(user, supabaseAdmin, scanLog.id)
     
     // Don't await the background task, let it run async
     backgroundScan.catch(error => {
@@ -88,13 +119,13 @@ serve(async (req) => {
       JSON.stringify({ error: error.message }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+        status: 500,
       }
     )
   }
 })
 
-async function scanUserEmails(user: any, supabaseClient: any, scanLogId: string) {
+async function scanUserEmails(user: any, supabaseAdmin: any, scanLogId: string) {
   try {
     console.log('Starting background email scan for user:', user.id)
     
@@ -121,9 +152,9 @@ async function scanUserEmails(user: any, supabaseClient: any, scanLogId: string)
 
     let subscriptionsFound = 0
     
-    // Insert mock subscriptions
+    // Insert mock subscriptions using admin client
     for (const subscription of mockSubscriptions) {
-      const { error: subError } = await supabaseClient
+      const { error: subError } = await supabaseAdmin
         .from('user_subscriptions')
         .upsert({
           user_id: user.id,
@@ -138,8 +169,8 @@ async function scanUserEmails(user: any, supabaseClient: any, scanLogId: string)
 
     console.log('Subscriptions found:', subscriptionsFound)
 
-    // Update scan log with completion
-    const { error: updateError } = await supabaseClient
+    // Update scan log with completion using admin client
+    const { error: updateError } = await supabaseAdmin
       .from('email_scan_logs')
       .update({
         status: 'completed',
@@ -158,8 +189,8 @@ async function scanUserEmails(user: any, supabaseClient: any, scanLogId: string)
   } catch (error) {
     console.error('Email scanning error:', error)
     
-    // Update scan log with error
-    await supabaseClient
+    // Update scan log with error using admin client
+    await supabaseAdmin
       .from('email_scan_logs')
       .update({
         status: 'failed',

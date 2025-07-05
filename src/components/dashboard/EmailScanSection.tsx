@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +15,15 @@ export function EmailScanSection() {
   const { data: lastScan } = useQuery({
     queryKey: ['last-email-scan'],
     queryFn: async () => {
+      console.log('Fetching last email scan...');
+      
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('No session found for email scan query');
+        throw new Error('Authentication required');
+      }
+
       const { data, error } = await supabase
         .from('email_scan_logs')
         .select('*')
@@ -21,7 +31,12 @@ export function EmailScanSection() {
         .limit(1)
         .single();
       
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching email scan logs:', error);
+        throw error;
+      }
+      
+      console.log('Last scan data:', data);
       return data;
     },
   });
@@ -37,11 +52,13 @@ export function EmailScanSection() {
         throw new Error('Authentication required');
       }
       
+      console.log('Session found, calling edge function...');
+      
       const { data, error } = await supabase.functions.invoke('scan-emails', {
         body: {},
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNtZ3hvdnJqcmt4Y2dpZnF5ZW1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MjM5NDUsImV4cCI6MjA2NzE5OTk0NX0.qgnFjDWDXXwuQ7MrEGngjamUY-gnrrXh-zW4p9X_M24',
+          'Content-Type': 'application/json',
         },
       });
       
@@ -50,6 +67,7 @@ export function EmailScanSection() {
         throw error;
       }
       
+      console.log('Edge function response:', data);
       return data;
     },
     onSuccess: (data) => {
