@@ -230,7 +230,7 @@ Respond in JSON with keys: provider, billing_amount, next_billing_date, status.`
   const response = await fetch('https://api.perplexity.ai/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${Deno.env.get('PERPLEXITY_API_KEY')}`,
+      'Authorization': `Bearer ${perplexityApiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -245,7 +245,9 @@ Respond in JSON with keys: provider, billing_amount, next_billing_date, status.`
     }),
   });
   if (!response.ok) {
-    throw new Error('Failed to get AI extraction from Perplexity');
+    const errorText = await response.text();
+    console.error('Perplexity API error:', errorText);
+    throw new Error('Failed to get AI extraction from Perplexity: ' + errorText);
   }
   const aiResponse = await response.json();
   let content = aiResponse.choices?.[0]?.message?.content || '{}';
