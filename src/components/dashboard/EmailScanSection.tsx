@@ -40,7 +40,8 @@ export function EmailScanSection() {
       const { data, error } = await supabase.functions.invoke('scan-emails', {
         body: {},
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNtZ3hvdnJqcmt4Y2dpZnF5ZW1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2MjM5NDUsImV4cCI6MjA2NzE5OTk0NX0.qgnFjDWDXXwuQ7MrEGngjamUY-gnrrXh-zW4p9X_M24',
         },
       });
       
