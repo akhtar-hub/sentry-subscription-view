@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +17,7 @@ export function SubscriptionsList() {
         .from('user_subscriptions')
         .select(`
           *,
-          organization:subscription_organizations(*)
+          subscription_organizations:organization_id(*)
         `)
         .order('created_at', { ascending: false });
       
