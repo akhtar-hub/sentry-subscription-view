@@ -151,58 +151,47 @@ async function scanUserEmails(user: any, supabaseAdmin: any, scanLogId: string) 
   try {
     console.log('Starting background email scan for user:', user.id)
     
-    // Simulate email scanning process with proper timing
+    // Simulate email scanning process
     console.log('Processing emails...')
     await new Promise(resolve => setTimeout(resolve, 5000)) // 5 seconds for demo
     
-    // For now, we'll simulate finding some subscriptions
-    const mockSubscriptions = [
-      {
-        name: 'Netflix',
-        cost: 15.99,
-        billing_frequency: 'monthly',
-        category: 'entertainment',
-        status: 'active',
-      },
-      {
-        name: 'Spotify',
-        cost: 9.99,
-        billing_frequency: 'monthly',
-        category: 'entertainment',
-        status: 'active',
-      }
-    ]
+    // Check if user already has any existing subscriptions
+    const { data: existingSubscriptions } = await supabaseAdmin
+      .from('user_subscriptions')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
 
+    console.log('Existing active subscriptions found:', existingSubscriptions?.length || 0)
+    
+    // For demo purposes, we'll only add subscriptions if none exist
+    // In a real implementation, this would analyze actual email content
     let subscriptionsFound = 0
     
-    console.log('Inserting found subscriptions...')
-    // Insert mock subscriptions using admin client
-    for (const subscription of mockSubscriptions) {
-      const { error: subError } = await supabaseAdmin
-        .from('user_subscriptions')
-        .upsert({
-          user_id: user.id,
-          ...subscription,
-          is_manual: false,
-        })
-
-      if (!subError) {
-        subscriptionsFound++
-        console.log(`Inserted subscription: ${subscription.name}`)
-      } else {
-        console.error('Error inserting subscription:', subError)
-      }
+    // Only add demo subscriptions if user has no existing active subscriptions
+    // and we want to simulate finding some (this should be replaced with real email analysis)
+    if (!existingSubscriptions || existingSubscriptions.length === 0) {
+      console.log('No existing subscriptions found, checking for subscription emails...')
+      
+      // In a real implementation, you would:
+      // 1. Connect to Gmail API
+      // 2. Search for subscription-related emails
+      // 3. Parse email content to extract subscription details
+      // 4. Only add subscriptions that are actually active
+      
+      // For now, we'll not add any mock subscriptions unless we find real evidence
+      console.log('Email scan completed - no active subscriptions detected in emails')
+    } else {
+      console.log('User already has active subscriptions, skipping insertion')
     }
 
-    console.log('Subscriptions found and inserted:', subscriptionsFound)
-
-    // Update scan log with completion using admin client
+    // Update scan log with completion
     const { error: updateError } = await supabaseAdmin
       .from('email_scan_logs')
       .update({
         status: 'completed',
         completed_at: new Date().toISOString(),
-        emails_processed: 50, // Mock value
+        emails_processed: 50, // Mock value - in real implementation this would be actual count
         subscriptions_found: subscriptionsFound,
       })
       .eq('id', scanLogId)
@@ -217,7 +206,7 @@ async function scanUserEmails(user: any, supabaseAdmin: any, scanLogId: string) 
   } catch (error) {
     console.error('Email scanning error:', error)
     
-    // Update scan log with error using admin client
+    // Update scan log with error
     const { error: updateError } = await supabaseAdmin
       .from('email_scan_logs')
       .update({

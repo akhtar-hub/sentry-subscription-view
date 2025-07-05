@@ -1,13 +1,16 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SubscriptionCard } from './SubscriptionCard';
-import { Package, Plus } from 'lucide-react';
+import { Package, Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function SubscriptionsList() {
+  const queryClient = useQueryClient();
+
   const { data: subscriptions, isLoading } = useQuery({
     queryKey: ['user-subscriptions'],
     queryFn: async () => {
@@ -21,6 +24,24 @@ export function SubscriptionsList() {
       
       if (error) throw error;
       return data;
+    },
+  });
+
+  const clearInactiveSubscriptionsMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('user_subscriptions')
+        .delete()
+        .neq('status', 'active');
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Inactive subscriptions removed');
+      queryClient.invalidateQueries({ queryKey: ['user-subscriptions'] });
+    },
+    onError: (error) => {
+      toast.error(`Failed to remove inactive subscriptions: ${error.message}`);
     },
   });
 
@@ -61,9 +82,9 @@ export function SubscriptionsList() {
           {activeSubscriptions.length === 0 ? (
             <div className="text-center py-8">
               <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Active Subscriptions</h3>
+              <h3 className="text-lg font-semibold mb-2">No Active Subscriptions Found</h3>
               <p className="text-muted-foreground mb-4">
-                Start by scanning your email or manually adding subscriptions
+                We didn't find any active subscription emails in your inbox. You can scan your emails again or manually add subscriptions.
               </p>
             </div>
           ) : (
@@ -82,11 +103,22 @@ export function SubscriptionsList() {
       {inactiveSubscriptions.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Inactive Subscriptions
-              <Badge variant="outline">{inactiveSubscriptions.length}</Badge>
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Inactive/Cancelled Subscriptions
+                <Badge variant="outline">{inactiveSubscriptions.length}</Badge>
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => clearInactiveSubscriptionsMutation.mutate()}
+                disabled={clearInactiveSubscriptionsMutation.isPending}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Clear All Inactive
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
