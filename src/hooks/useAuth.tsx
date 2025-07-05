@@ -19,96 +19,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('AuthProvider: Setting up auth state listener');
-    let mounted = true;
+    console.log('AuthProvider: Initializing auth');
     
-    // Set up auth state listener
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('AuthProvider: Initial session:', !!session);
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('AuthProvider: Auth state changed', { event, session: !!session, user: !!session?.user });
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-          setLoading(false);
-        }
+      async (event, session) => {
+        console.log('AuthProvider: Auth state changed:', event, !!session);
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
       }
     );
 
-    // Check for existing session
-    const getInitialSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error('AuthProvider: Error getting session:', error);
-        } else {
-          console.log('AuthProvider: Initial session check', { session: !!session });
-          if (mounted) {
-            setSession(session);
-            setUser(session?.user ?? null);
-          }
-        }
-      } catch (error) {
-        console.error('AuthProvider: Exception getting session:', error);
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    getInitialSession();
-
-    return () => {
-      mounted = false;
-      console.log('AuthProvider: Cleaning up auth listener');
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   const signInWithGoogle = async () => {
-    try {
-      console.log('AuthProvider: Starting Google OAuth');
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          scopes: 'https://www.googleapis.com/auth/gmail.readonly',
-          redirectTo: `${window.location.origin}/dashboard`,
-        },
-      });
-      if (error) {
-        console.error('AuthProvider: Google OAuth error:', error);
-        throw error;
-      }
-    } catch (error) {
-      console.error('AuthProvider: Sign in error:', error);
+    console.log('AuthProvider: Starting Google sign in');
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+        scopes: 'https://www.googleapis.com/auth/gmail.readonly'
+      },
+    });
+    
+    if (error) {
+      console.error('AuthProvider: Google sign in error:', error);
       throw error;
     }
   };
 
   const signOut = async () => {
-    try {
-      console.log('AuthProvider: Signing out');
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('AuthProvider: Sign out error:', error);
-        throw error;
-      }
-    } catch (error) {
-      console.error('AuthProvider: Sign out exception:', error);
+    console.log('AuthProvider: Signing out');
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('AuthProvider: Sign out error:', error);
       throw error;
     }
   };
 
-  const contextValue: AuthContextType = {
-    user,
-    session,
-    loading,
-    signInWithGoogle,
-    signOut,
-  };
-
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider value={{
+      user,
+      session,
+      loading,
+      signInWithGoogle,
+      signOut,
+    }}>
       {children}
     </AuthContext.Provider>
   );

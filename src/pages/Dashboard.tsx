@@ -6,42 +6,23 @@ import { SubscriptionsList } from '@/components/dashboard/SubscriptionsList';
 import { EmailScanSection } from '@/components/dashboard/EmailScanSection';
 import { AddSubscriptionDialog } from '@/components/dashboard/AddSubscriptionDialog';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
-    console.log('Dashboard: Auth state', { 
-      user: !!user, 
-      loading, 
-      pathname: location.pathname,
-      hash: location.hash,
-      search: location.search 
-    });
+    console.log('Dashboard: Auth state - user:', !!user, 'loading:', loading);
     
-    // If we're still loading, don't redirect yet
-    if (loading) {
-      console.log('Dashboard: Still loading auth state');
-      return;
-    }
-    
-    // If no user after loading is complete, redirect to auth
-    if (!user) {
-      console.log('Dashboard: No user after loading complete, redirecting to auth');
+    if (!loading && !user) {
+      console.log('Dashboard: No user, redirecting to auth');
       navigate('/auth', { replace: true });
-      return;
     }
-    
-    console.log('Dashboard: User authenticated, rendering dashboard');
-  }, [user, loading, navigate, location]);
+  }, [user, loading, navigate]);
 
-  // Show loading while auth is being determined
   if (loading) {
-    console.log('Dashboard: Showing loading state');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -52,9 +33,7 @@ export default function Dashboard() {
     );
   }
 
-  // If no user after loading, show loading while redirect happens
   if (!user) {
-    console.log('Dashboard: No user, showing redirect loading');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -65,7 +44,7 @@ export default function Dashboard() {
     );
   }
 
-  console.log('Dashboard: Rendering dashboard for user', user.email);
+  console.log('Dashboard: Rendering dashboard for user:', user.email);
 
   return (
     <div className="min-h-screen bg-gray-50">
