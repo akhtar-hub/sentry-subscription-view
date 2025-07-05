@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { DashboardStats } from '@/components/dashboard/DashboardStats';
@@ -7,10 +6,11 @@ import { EmailScanSection } from '@/components/dashboard/EmailScanSection';
 import { AddSubscriptionDialog } from '@/components/dashboard/AddSubscriptionDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Dashboard() {
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const { user, loading } = useAuth();
+  const { user, session, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,6 +21,24 @@ export default function Dashboard() {
       navigate('/auth', { replace: true });
     }
   }, [user, loading, navigate]);
+
+  // Save Gmail tokens to profile after OAuth sign-in
+  useEffect(() => {
+    if (session && user) {
+      console.log('Session after OAuth:', session);
+      const providerToken = session.provider_token;
+      const refreshToken = session.refresh_token;
+      if (providerToken) {
+        supabase
+          .from('profiles')
+          .update({
+            gmail_access_token: providerToken,
+            gmail_refresh_token: refreshToken,
+          })
+          .eq('id', user.id);
+      }
+    }
+  }, [session, user]);
 
   if (loading) {
     return (
