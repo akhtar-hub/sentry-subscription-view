@@ -1,37 +1,58 @@
 
 import { useState, useEffect } from 'react';
-import { AuthGuard } from '@/components/AuthGuard';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { DashboardStats } from '@/components/dashboard/DashboardStats';
 import { SubscriptionsList } from '@/components/dashboard/SubscriptionsList';
 import { EmailScanSection } from '@/components/dashboard/EmailScanSection';
 import { AddSubscriptionDialog } from '@/components/dashboard/AddSubscriptionDialog';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('Dashboard: Component mounted', { user: !!user });
-  }, [user]);
+    console.log('Dashboard: Auth state', { user: !!user, loading });
+    
+    if (!loading && !user) {
+      console.log('Dashboard: No user, redirecting to auth');
+      navigate('/auth', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  // Show loading while auth is being determined
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If no user, show nothing (redirect will happen)
+  if (!user) {
+    return null;
+  }
 
   return (
-    <AuthGuard>
-      <div className="min-h-screen bg-gray-50">
-        <DashboardHeader onAddSubscription={() => setShowAddDialog(true)} />
-        
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-          <DashboardStats />
-          <EmailScanSection />
-          <SubscriptionsList />
-        </main>
+    <div className="min-h-screen bg-gray-50">
+      <DashboardHeader onAddSubscription={() => setShowAddDialog(true)} />
+      
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <DashboardStats />
+        <EmailScanSection />
+        <SubscriptionsList />
+      </main>
 
-        <AddSubscriptionDialog 
-          open={showAddDialog} 
-          onOpenChange={setShowAddDialog}
-        />
-      </div>
-    </AuthGuard>
+      <AddSubscriptionDialog 
+        open={showAddDialog} 
+        onOpenChange={setShowAddDialog}
+      />
+    </div>
   );
 }

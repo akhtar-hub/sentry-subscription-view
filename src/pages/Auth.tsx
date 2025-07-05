@@ -25,22 +25,33 @@ export default function Auth() {
       console.log('Auth: Starting Google sign in');
       setIsSigningIn(true);
       await signInWithGoogle();
+      // Don't need to handle redirect here - it's handled by OAuth flow
     } catch (error) {
       console.error('Auth: Google sign in error:', error);
-      toast.error('Failed to sign in with Google');
+      toast.error('Failed to sign in with Google. Please try again.');
       setIsSigningIn(false);
     }
   };
 
   // Show loading while checking auth state
-  if (loading || user) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600">
-            {user ? 'Redirecting to dashboard...' : 'Loading...'}
-          </p>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If user is already logged in, show loading while redirecting
+  if (user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-600">Redirecting to dashboard...</p>
         </div>
       </div>
     );
