@@ -189,7 +189,7 @@ export function EmailScanSection() {
 
         <Button 
           onClick={handleScanEmails}
-          disabled={isCurrentlyScanning || scanEmailsMutation.isLoading}
+          disabled={isCurrentlyScanning || scanEmailsMutation.isPending}
           className="w-full"
         >
           <Search className="h-4 w-4 mr-2" />
