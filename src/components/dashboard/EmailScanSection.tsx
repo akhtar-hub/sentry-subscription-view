@@ -29,28 +29,28 @@ export function EmailScanSection() {
 
   const scanEmailsMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/scan-emails', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-        },
+      console.log('Starting email scan via Supabase Edge Function');
+      
+      const { data, error } = await supabase.functions.invoke('scan-emails', {
+        body: {}
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to start email scan');
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
       }
       
-      return response.json();
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Email scan started successfully:', data);
       toast.success('Email scan started successfully!');
       queryClient.invalidateQueries({ queryKey: ['last-email-scan'] });
       queryClient.invalidateQueries({ queryKey: ['user-subscriptions'] });
     },
     onError: (error) => {
-      toast.error('Failed to start email scan');
       console.error('Scan error:', error);
+      toast.error('Failed to start email scan');
     },
     onSettled: () => {
       setIsScanning(false);
@@ -58,6 +58,7 @@ export function EmailScanSection() {
   });
 
   const handleScanEmails = () => {
+    console.log('Email scan button clicked');
     setIsScanning(true);
     scanEmailsMutation.mutate();
   };
