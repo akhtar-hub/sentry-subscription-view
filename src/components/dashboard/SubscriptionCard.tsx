@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { CurrencyDisplay } from '@/components/ui/currency-display';
 import { MoreHorizontal, Edit, Trash, Calendar, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -104,9 +105,10 @@ export function SubscriptionCard({ subscription }: SubscriptionCardProps) {
           {subscription.cost && (
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">
-                ${parseFloat(subscription.cost).toFixed(2)}
-              </span>
+              <CurrencyDisplay 
+                amount={parseFloat(subscription.cost)} 
+                className="font-medium"
+              />
               <Badge variant="outline" className="text-xs">
                 {getBillingFrequencyLabel(subscription.billing_frequency)}
               </Badge>

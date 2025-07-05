@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CurrencyDisplay } from '@/components/ui/currency-display';
 import { DollarSign, Calendar, TrendingUp, Package } from 'lucide-react';
 
 export function DashboardStats() {
@@ -39,13 +40,13 @@ export function DashboardStats() {
   const stats = [
     {
       title: "Monthly Spending",
-      value: `$${totalMonthly.toFixed(2)}`,
+      value: <CurrencyDisplay amount={totalMonthly} />,
       icon: DollarSign,
       change: "+12% from last month"
     },
     {
       title: "Yearly Total",
-      value: `$${totalYearly.toFixed(2)}`,
+      value: <CurrencyDisplay amount={totalYearly} />,
       icon: TrendingUp,
       change: "Projected annual cost"
     },
@@ -74,7 +75,9 @@ export function DashboardStats() {
             <stat.icon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stat.value}</div>
+            <div className="text-2xl font-bold">
+              {typeof stat.value === 'string' ? stat.value : stat.value}
+            </div>
             <p className="text-xs text-muted-foreground mt-1">
               {stat.change}
             </p>
