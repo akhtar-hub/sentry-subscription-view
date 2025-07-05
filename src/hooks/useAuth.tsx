@@ -64,7 +64,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/dashboard`,
-        scopes: 'https://www.googleapis.com/auth/gmail.readonly'
+        scopes: 'https://www.googleapis.com/auth/gmail.readonly',
+        queryParams: {
+          prompt: 'consent',
+          access_type: 'offline',
+        },
       },
     });
     
