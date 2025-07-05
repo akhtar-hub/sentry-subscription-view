@@ -5,12 +5,41 @@ import { Card, CardContent } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Edit, Trash, Calendar, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface SubscriptionCardProps {
   subscription: any;
 }
 
 export function SubscriptionCard({ subscription }: SubscriptionCardProps) {
+  const queryClient = useQueryClient();
+
+  const deleteSubscriptionMutation = useMutation({
+    mutationFn: async (subscriptionId: string) => {
+      const { error } = await supabase
+        .from('user_subscriptions')
+        .delete()
+        .eq('id', subscriptionId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Subscription deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['user-subscriptions'] });
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete subscription: ${error.message}`);
+    },
+  });
+
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to delete this subscription?')) {
+      deleteSubscriptionMutation.mutate(subscription.id);
+    }
+  };
+
   const getBillingFrequencyLabel = (frequency: string) => {
     switch (frequency) {
       case 'monthly': return 'Monthly';
@@ -59,9 +88,13 @@ export function SubscriptionCard({ subscription }: SubscriptionCardProps) {
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600">
+              <DropdownMenuItem 
+                className="text-red-600" 
+                onClick={handleDelete}
+                disabled={deleteSubscriptionMutation.isPending}
+              >
                 <Trash className="mr-2 h-4 w-4" />
-                Delete
+                {deleteSubscriptionMutation.isPending ? 'Deleting...' : 'Delete'}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
