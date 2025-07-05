@@ -17,13 +17,21 @@ export function CurrencyDisplay({
   className,
   showCurrencyCode = false 
 }: CurrencyDisplayProps) {
-  const { formatAmount, currency: defaultCurrency } = useUserCurrency();
+  const { formatAmount, currency: defaultCurrency, locale: defaultLocale } = useUserCurrency();
   
   // Use provided currency/locale or fall back to user's preferences
   const displayCurrency = currency || defaultCurrency;
-  const displayLocale = locale || navigator.language || 'en-US';
+  const displayLocale = locale || defaultLocale;
   
   let formattedAmount: string;
+  
+  console.log('CurrencyDisplay rendering:', { 
+    amount, 
+    currency, 
+    locale, 
+    displayCurrency, 
+    displayLocale 
+  });
   
   try {
     if (currency || locale) {
@@ -41,7 +49,7 @@ export function CurrencyDisplay({
   } catch (error) {
     // Fallback formatting
     console.warn('Currency formatting failed:', error);
-    formattedAmount = `$${amount.toFixed(2)}`;
+    formattedAmount = `${displayCurrency === 'INR' ? '₹' : '$'}${amount.toFixed(2)}`;
   }
   
   return (
