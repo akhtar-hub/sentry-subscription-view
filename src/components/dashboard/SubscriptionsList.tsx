@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SubscriptionCard } from './SubscriptionCard';
-import { Package, Plus, Trash2 } from 'lucide-react';
+import { Package, Plus, Trash2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function SubscriptionsList() {
@@ -24,6 +24,24 @@ export function SubscriptionsList() {
       
       if (error) throw error;
       return data;
+    },
+  });
+
+  const clearAllSubscriptionsMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('user_subscriptions')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('All subscriptions cleared');
+      queryClient.invalidateQueries({ queryKey: ['user-subscriptions'] });
+    },
+    onError: (error) => {
+      toast.error(`Failed to clear subscriptions: ${error.message}`);
     },
   });
 
@@ -65,6 +83,7 @@ export function SubscriptionsList() {
 
   const activeSubscriptions = subscriptions?.filter(sub => sub.status === 'active') || [];
   const inactiveSubscriptions = subscriptions?.filter(sub => sub.status !== 'active') || [];
+  const totalSubscriptions = subscriptions?.length || 0;
 
   return (
     <div className="space-y-6">
@@ -76,6 +95,28 @@ export function SubscriptionsList() {
               Active Subscriptions
               <Badge variant="secondary">{activeSubscriptions.length}</Badge>
             </CardTitle>
+            {totalSubscriptions > 0 && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => clearInactiveSubscriptionsMutation.mutate()}
+                  disabled={clearInactiveSubscriptionsMutation.isPending}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Clear Inactive
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => clearAllSubscriptionsMutation.mutate()}
+                  disabled={clearAllSubscriptionsMutation.isPending}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Clear All
+                </Button>
+              </div>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -86,6 +127,11 @@ export function SubscriptionsList() {
               <p className="text-muted-foreground mb-4">
                 We didn't find any active subscription emails in your inbox. You can scan your emails again or manually add subscriptions.
               </p>
+              {totalSubscriptions > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  You have old subscription data that may be outdated. Use the "Clear All" button above to remove it.
+                </p>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
