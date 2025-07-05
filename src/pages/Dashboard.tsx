@@ -27,13 +27,13 @@ export default function Dashboard() {
     if (session && user) {
       console.log('Session after OAuth:', session);
       const providerToken = session.provider_token;
-      const refreshToken = session.refresh_token;
+      const providerRefreshToken = session.provider_refresh_token;
       if (providerToken) {
         supabase
           .from('profiles')
           .update({
             gmail_access_token: providerToken,
-            gmail_refresh_token: refreshToken,
+            gmail_refresh_token: providerRefreshToken,
           })
           .eq('id', user.id);
       }
