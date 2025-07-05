@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,9 +10,10 @@ import { toast } from 'sonner';
 
 export function EmailScanSection() {
   const [isScanning, setIsScanning] = useState(false);
+  const [currentScanId, setCurrentScanId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: lastScan } = useQuery({
+  const { data: lastScan, refetch: refetchLastScan } = useQuery({
     queryKey: ['last-email-scan'],
     queryFn: async () => {
       console.log('Fetching last email scan...');
@@ -41,11 +42,41 @@ export function EmailScanSection() {
     },
   });
 
+  // Poll for scan status updates when there's an active scan
+  useEffect(() => {
+    if (currentScanId || (lastScan && lastScan.status === 'running')) {
+      const pollInterval = setInterval(() => {
+        console.log('Polling for scan status update...');
+        refetchLastScan();
+      }, 3000); // Poll every 3 seconds
+
+      return () => clearInterval(pollInterval);
+    }
+  }, [currentScanId, lastScan?.status, refetchLastScan]);
+
+  // Update UI state based on scan status
+  useEffect(() => {
+    if (lastScan) {
+      if (lastScan.status === 'running') {
+        setIsScanning(true);
+      } else if (lastScan.status === 'completed' || lastScan.status === 'failed') {
+        setIsScanning(false);
+        setCurrentScanId(null);
+        
+        // Show completion toast
+        if (lastScan.status === 'completed') {
+          toast.success(`Email scan completed! Found ${lastScan.subscriptions_found || 0} subscriptions.`);
+        } else if (lastScan.status === 'failed') {
+          toast.error('Email scan failed. Please try again.');
+        }
+      }
+    }
+  }, [lastScan?.status]);
+
   const scanEmailsMutation = useMutation({
     mutationFn: async () => {
       console.log('Starting email scan via Supabase Edge Function');
       
-      // Get the current session to ensure we're authenticated
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !session) {
@@ -73,21 +104,21 @@ export function EmailScanSection() {
     onSuccess: (data) => {
       console.log('Email scan started successfully:', data);
       toast.success('Email scan started successfully!');
+      setCurrentScanId(data.scanId);
+      setIsScanning(true);
       queryClient.invalidateQueries({ queryKey: ['last-email-scan'] });
       queryClient.invalidateQueries({ queryKey: ['user-subscriptions'] });
     },
     onError: (error) => {
       console.error('Scan error:', error);
       toast.error(`Failed to start email scan: ${error.message}`);
-    },
-    onSettled: () => {
       setIsScanning(false);
+      setCurrentScanId(null);
     },
   });
 
   const handleScanEmails = () => {
     console.log('Email scan button clicked');
-    setIsScanning(true);
     scanEmailsMutation.mutate();
   };
 
@@ -103,6 +134,8 @@ export function EmailScanSection() {
         return <Mail className="h-5 w-5 text-gray-500" />;
     }
   };
+
+  const isCurrentlyScanning = isScanning || lastScan?.status === 'running';
 
   return (
     <Card>
@@ -139,18 +172,28 @@ export function EmailScanSection() {
               </div>
             </div>
             {lastScan.status === 'running' && (
-              <Progress value={65} className="mt-3" />
+              <div className="mt-3">
+                <Progress value={65} className="mb-2" />
+                <p className="text-xs text-muted-foreground text-center">
+                  Scanning in progress...
+                </p>
+              </div>
+            )}
+            {lastScan.status === 'failed' && lastScan.error_message && (
+              <div className="mt-3 p-2 bg-red-50 rounded text-sm text-red-600">
+                Error: {lastScan.error_message}
+              </div>
             )}
           </div>
         )}
 
         <Button 
           onClick={handleScanEmails}
-          disabled={isScanning || lastScan?.status === 'running'}
+          disabled={isCurrentlyScanning || scanEmailsMutation.isLoading}
           className="w-full"
         >
           <Search className="h-4 w-4 mr-2" />
-          {isScanning || lastScan?.status === 'running' 
+          {isCurrentlyScanning
             ? 'Scanning Emails...' 
             : 'Scan Email Inbox'
           }

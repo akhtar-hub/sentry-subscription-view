@@ -15,7 +15,6 @@ serve(async (req) => {
   try {
     console.log('Scan emails function started')
     
-    // Get auth header
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       console.error('No Authorization header found')
@@ -66,6 +65,29 @@ serve(async (req) => {
     }
 
     console.log('User authenticated:', user.id)
+
+    // Check for existing running scan
+    const { data: existingScan } = await supabaseAdmin
+      .from('email_scan_logs')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('status', 'running')
+      .single()
+
+    if (existingScan) {
+      console.log('Found existing running scan:', existingScan.id)
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Email scan already in progress',
+          scanId: existingScan.id 
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      )
+    }
 
     // Use admin client to insert scan log (bypassing RLS)
     const { data: scanLog, error: logError } = await supabaseAdmin
@@ -129,8 +151,9 @@ async function scanUserEmails(user: any, supabaseAdmin: any, scanLogId: string) 
   try {
     console.log('Starting background email scan for user:', user.id)
     
-    // Simulate email scanning process
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    // Simulate email scanning process with proper timing
+    console.log('Processing emails...')
+    await new Promise(resolve => setTimeout(resolve, 5000)) // 5 seconds for demo
     
     // For now, we'll simulate finding some subscriptions
     const mockSubscriptions = [
@@ -152,6 +175,7 @@ async function scanUserEmails(user: any, supabaseAdmin: any, scanLogId: string) 
 
     let subscriptionsFound = 0
     
+    console.log('Inserting found subscriptions...')
     // Insert mock subscriptions using admin client
     for (const subscription of mockSubscriptions) {
       const { error: subError } = await supabaseAdmin
@@ -164,10 +188,13 @@ async function scanUserEmails(user: any, supabaseAdmin: any, scanLogId: string) 
 
       if (!subError) {
         subscriptionsFound++
+        console.log(`Inserted subscription: ${subscription.name}`)
+      } else {
+        console.error('Error inserting subscription:', subError)
       }
     }
 
-    console.log('Subscriptions found:', subscriptionsFound)
+    console.log('Subscriptions found and inserted:', subscriptionsFound)
 
     // Update scan log with completion using admin client
     const { error: updateError } = await supabaseAdmin
@@ -182,15 +209,16 @@ async function scanUserEmails(user: any, supabaseAdmin: any, scanLogId: string) 
 
     if (updateError) {
       console.error('Error updating scan log:', updateError)
+      throw updateError
     }
 
-    console.log('Email scan completed successfully')
+    console.log('Email scan completed successfully - scan log updated')
 
   } catch (error) {
     console.error('Email scanning error:', error)
     
     // Update scan log with error using admin client
-    await supabaseAdmin
+    const { error: updateError } = await supabaseAdmin
       .from('email_scan_logs')
       .update({
         status: 'failed',
@@ -198,5 +226,9 @@ async function scanUserEmails(user: any, supabaseAdmin: any, scanLogId: string) 
         error_message: error.message,
       })
       .eq('id', scanLogId)
+
+    if (updateError) {
+      console.error('Error updating failed scan log:', updateError)
+    }
   }
 }
