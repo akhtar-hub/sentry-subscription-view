@@ -43,7 +43,7 @@ export function PendingSubscriptionsReviewDialog({ open, onOpenChange, pendingSu
       .from('user_subscriptions')
       .update({
         name: editData.name,
-        billing_amount: editData.billing_amount,
+        cost: editData.billing_amount ? parseFloat(editData.billing_amount) : null,
         next_billing_date: editData.next_billing_date,
         status: editData.status,
       })
@@ -80,7 +80,7 @@ export function PendingSubscriptionsReviewDialog({ open, onOpenChange, pendingSu
                 ) : (
                   <>
                     <div><b>Name:</b> {sub.name}</div>
-                    <div><b>Billing Amount:</b> {sub.billing_amount}</div>
+                    <div><b>Billing Amount:</b> {sub.cost}</div>
                     <div><b>Next Billing Date:</b> {sub.next_billing_date}</div>
                     <div><b>Status:</b> {sub.status}</div>
                     <div className="flex gap-2 mt-2">
