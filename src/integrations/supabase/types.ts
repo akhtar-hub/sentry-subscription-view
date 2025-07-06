@@ -128,6 +128,7 @@ export type Database = {
           email_source: string | null
           id: string
           is_manual: boolean | null
+          is_pending_review: boolean | null
           name: string
           next_billing_date: string | null
           organization_id: string | null
@@ -145,6 +146,7 @@ export type Database = {
           email_source?: string | null
           id?: string
           is_manual?: boolean | null
+          is_pending_review?: boolean | null
           name: string
           next_billing_date?: string | null
           organization_id?: string | null
@@ -162,6 +164,7 @@ export type Database = {
           email_source?: string | null
           id?: string
           is_manual?: boolean | null
+          is_pending_review?: boolean | null
           name?: string
           next_billing_date?: string | null
           organization_id?: string | null
